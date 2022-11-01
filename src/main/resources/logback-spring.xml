@@ -25,14 +25,15 @@
         %n:输出一个换行符号
     -->
     <!--格式化输出：                  %d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度 %msg：日志消息，%n是换行符-->
-    <property name="pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} -- %msg%n"/>
+    <property name="pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [${name}] ${PID} --- [%thread] [%-40.40logger{39},%method,%line] : %msg%n"/>
+    <property name="color" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) %green([${name}]) %red(${PID}) --- %magenta([%thread]) %cyan([%-40.40logger{39},%method,%line]) : %msg%n"/>
 
     <!--输出到控制台 ConsoleAppender-->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <!--展示格式-->
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <!--输出格式-->
-            <pattern>${pattern}</pattern>
+            <pattern>${color}</pattern>
             <!--设置编码-->
             <charset>UTF-8</charset>
         </encoder>
@@ -57,6 +58,32 @@
         <!-- LevelFilter： 级别过滤器，根据日志级别进行过滤 -->
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>INFO</level>
+            <!-- 用于配置符合过滤条件的操作 ACCEPT：日志会被立即处理，不再经过剩余过滤器 -->
+            <onMatch>ACCEPT</onMatch>
+            <!-- 用于配置不符合过滤条件的操作 DENY：日志将立即被抛弃不再经过其他过滤器 -->
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <appender name="WARN" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 被写入的文件名，可以是相对目录，也可以是绝对目录，如果上级目录不存在会自动创建 -->
+        <file>${LOG_DIR}/warn/${name}-warn.log</file>
+        <!-- 当发生滚动时，决定RollingFileAppender的行为，涉及文件移动和重命名。属性class定义具体的滚动策略类 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- 必要节点，包含文件名及"%d"转换符，"%d"可以包含一个java.text.SimpleDateFormat指定的时间格式，默认格式是 yyyy-MM-dd -->
+            <fileNamePattern>${LOG_DIR}/warn/${name}-warn-%d{yyyy-MM-dd}.log.%i.gz</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>20MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <!-- 可选节点，控制保留的归档文件的最大数量，超出数量就删除旧文件。假设设置每个月滚动，如果是6，则只保存最近6个月的文件，删除之前的旧文件 -->
+            <maxHistory>10</maxHistory>
+        </rollingPolicy>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${pattern}</pattern>
+        </encoder>
+        <!-- LevelFilter： 级别过滤器，根据日志级别进行过滤 -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
             <!-- 用于配置符合过滤条件的操作 ACCEPT：日志会被立即处理，不再经过剩余过滤器 -->
             <onMatch>ACCEPT</onMatch>
             <!-- 用于配置不符合过滤条件的操作 DENY：日志将立即被抛弃不再经过其他过滤器 -->
@@ -124,6 +151,7 @@
         <appender-ref ref="INFO"/>
         <appender-ref ref="ERROR"/>
         <appender-ref ref="DEBUG"/>
+        <appender-ref ref="WARN"/>
     </root>
 
 </configuration>
